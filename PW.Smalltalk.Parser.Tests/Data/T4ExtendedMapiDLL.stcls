@@ -1,0 +1,251 @@
+﻿
+T4Mapi32DLL variableByteSubclass: #T4ExtendedMapiDLL
+  classVariableNames: ''
+  poolDictionaries: ''    !
+
+
+!T4ExtendedMapiDLL class methods !
+   
+COMMENT
+"
+	Copyright: © 2011 Policy Works Inc.
+	DateTimeCreated: 2003-09-26 16:31:26
+	DateTimeModified: 2011-10-19 15:20:13
+	LastModifiedBy: ivar
+"
+!
+
+fileName
+	"Private - Answer the receiver's file name."
+
+	^'T4ExtendedMapi32.dll'
+!
+  
+T4_FAILED_SEND_USER_CANCELLED
+"
+	Access: Private
+	Category Name: Unclassified
+	Description: 
+	Result Type: 
+"
+	^3758112768
+! !
+
+
+
+!T4ExtendedMapiDLL methods !
+  
+invokeSendMailTo: anInteger
+    recipientTypes: anInteger2
+    numRecipients: anInteger3
+    subject: aString
+    body: aString2
+    attachmentNames: anInteger4
+    attachmentPaths: anInteger5
+    numAttachments: anInteger6
+    openEmailDialog: aBoolean
+"
+    Category Name: API Function
+    Description:
+    Result Type: Boolean
+"
+    <api: T4SendMessage long long long structIn structIn long long long boolean boolean>
+    ^self invalidArgument
+!
+
+invokeStringForError: anInteger
+"
+	Category Name: API Function
+	Description:
+	Result Type: String
+"
+	<api: T4StringForError long ulong>
+	^self invalidArgument
+!
+
+sendMailTo: aCollection1
+    recipientTypes: aCollection
+    subject: aString1
+    body: aString2
+    attachmentNames: aCollection2
+    attachmentPaths: aCollection3
+    openEmailDialog: aBoolean
+"
+    Category Name: Friendly Function
+    Description:
+    Result Type: String
+"
+    | 
+        recipients recipientTypes attachmentPaths attachmentNames 
+        recipientAddress recipientTypesAddress attachmentNameAddresses attachmentPathAddresses 
+        recipientsBuffer attachmentNamesBuffer attachmentPathsBuffer
+        sendEmailOK errCode
+    |
+
+    recipients := aCollection1 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    recipientTypes := ExternalBuffer new: aCollection size * 4.
+    
+    (0 to: aCollection size - 1) do: [:i | 
+        recipientTypes 
+            longAtOffset: i * 4 
+            put: (aCollection at: i + 1).
+    ].
+    
+    attachmentNames := aCollection2 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    attachmentPaths := aCollection3 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    
+    [
+        
+        recipientsBuffer := ExternalBuffer new: (recipients size * 4).
+        1 to: recipients size do: [:i |
+            recipientsBuffer uLongAtOffset: (i - 1)*4 put: (recipients at: i) asInteger.
+        ].
+
+        attachmentPathsBuffer := ExternalBuffer new: (attachmentPaths size * 4).
+        1 to: attachmentPaths size do: [:i |
+            attachmentPathsBuffer uLongAtOffset: (i - 1)*4 put: (attachmentPaths at: i) asInteger.
+        ].
+        
+        attachmentNamesBuffer := ExternalBuffer new: (attachmentNames size * 4).
+        1 to: attachmentNames size do: [:i |
+            attachmentNamesBuffer uLongAtOffset: (i - 1)*4 put: (attachmentNames at: i) asInteger.
+        ].
+
+        [
+            recipientAddress := ExternalAddress copyToNonSmalltalkMemory: recipientsBuffer contents.
+            recipientTypesAddress := ExternalAddress copyToNonSmalltalkMemory: recipientTypes contents.
+            attachmentNameAddresses := ExternalAddress copyToNonSmalltalkMemory: attachmentNamesBuffer contents.
+            attachmentPathAddresses := ExternalAddress copyToNonSmalltalkMemory: attachmentPathsBuffer contents.
+            
+            sendEmailOK := self 
+                invokeSendMailTo: recipientAddress asInteger
+                recipientTypes: recipientTypesAddress asInteger
+                numRecipients: aCollection1 size
+                subject: aString1
+                body: aString2
+                attachmentNames: attachmentNameAddresses asInteger
+                attachmentPaths: attachmentPathAddresses asInteger
+                numAttachments: aCollection2 size
+                openEmailDialog: aBoolean.
+            
+            errCode := self lastOsError.
+            sendEmailOK ifFalse: [
+                errCode = T4ExtendedMapiDLL T4_FAILED_SEND_USER_CANCELLED ifFalse: [
+                    ^self stringForError: errCode
+                ].
+            ].
+            
+            ^''
+
+        ] ensure: [
+            recipientAddress free.
+            recipientTypesAddress free.
+            attachmentNameAddresses free.
+            attachmentPathAddresses free.
+        ].
+    ] ensure: [
+        recipients do: [:each | each free].
+        attachmentPaths do: [:each | each free].
+        attachmentNames do: [:each | each free].
+    ].
+!
+ 
+sendMailTo: aCollection1
+    recipientTypes: aCollection
+    subject: aString1
+    body: aString2
+    attachmentNames: aCollection2
+    attachmentPaths: aCollection3
+    openEmailDialog: aBoolean
+    ifNotSent: aBlock
+"
+    Category Name: API
+"
+    | 
+        recipients attachmentPaths attachmentNames 
+        recipientAddress attachmentNameAddresses attachmentPathAddresses 
+        recipientsBuffer attachmentNamesBuffer attachmentPathsBuffer
+        sendEmailOK errCode
+        recipientTypes recipientTypesAddress    |
+
+    recipients := aCollection1 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    recipientTypes := ExternalBuffer new: aCollection size * 4.
+    
+    (0 to: aCollection size - 1) do: [:i | 
+        recipientTypes 
+            longAtOffset: i * 4 
+            put: (aCollection at: i + 1).
+    ].
+     
+    attachmentNames := aCollection2 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    attachmentPaths := aCollection3 collect: [:each | ExternalAddress copyToNonSmalltalkMemory: each asAsciiZ].
+    
+    [
+        
+        recipientsBuffer := ExternalBuffer new: (recipients size * 4).
+        1 to: recipients size do: [:i |
+            recipientsBuffer uLongAtOffset: (i - 1)*4 put: (recipients at: i) asInteger.
+        ].
+
+        attachmentPathsBuffer := ExternalBuffer new: (attachmentPaths size * 4).
+        1 to: attachmentPaths size do: [:i |
+            attachmentPathsBuffer uLongAtOffset: (i - 1)*4 put: (attachmentPaths at: i) asInteger.
+        ].
+        
+        attachmentNamesBuffer := ExternalBuffer new: (attachmentNames size * 4).
+        1 to: attachmentNames size do: [:i |
+            attachmentNamesBuffer uLongAtOffset: (i - 1)*4 put: (attachmentNames at: i) asInteger.
+        ].
+
+        [
+            recipientAddress := ExternalAddress copyToNonSmalltalkMemory: recipientsBuffer contents.
+            recipientTypesAddress := ExternalAddress copyToNonSmalltalkMemory: recipientTypes contents.
+            
+            attachmentNameAddresses := ExternalAddress copyToNonSmalltalkMemory: attachmentNamesBuffer contents.
+            attachmentPathAddresses := ExternalAddress copyToNonSmalltalkMemory: attachmentPathsBuffer contents.
+            sendEmailOK := self
+                invokeSendMailTo: recipientAddress asInteger
+                recipientTypes: recipientTypesAddress asInteger
+                numRecipients: aCollection1 size
+                subject: aString1
+                body: aString2
+                attachmentNames: attachmentNameAddresses asInteger
+                attachmentPaths: attachmentPathAddresses asInteger
+                numAttachments: aCollection2 size
+                openEmailDialog: aBoolean.
+
+            errCode := self lastOsError.
+            sendEmailOK ifFalse: [              
+                errCode = T4ExtendedMapiDLL T4_FAILED_SEND_USER_CANCELLED ifFalse: [
+                    T4ErrorMessage signal: (self stringForError: errCode).          
+                ].
+                aBlock value.
+            ].
+        ] ensure: [
+            recipientAddress free.
+            recipientTypesAddress free.
+            attachmentNameAddresses free.
+            attachmentPathAddresses free.
+        ].
+    ] ensure: [
+        recipients do: [:each | each free].
+        attachmentPaths do: [:each | each free].
+        attachmentNames do: [:each | each free].
+    ].
+!
+ 
+stringForError: anInteger
+"
+	Category Name: Friendly Function
+	Description:
+	Result Type: String
+"
+	| aString bytes externalAddress |
+
+	bytes := self invokeStringForError: anInteger.
+	externalAddress := ExternalAddress fromBytes: bytes.
+	externalAddress isValid ifFalse: [^''].
+	aString := String fromAddress: externalAddress.
+	bytes release.
+	^aString
+! !

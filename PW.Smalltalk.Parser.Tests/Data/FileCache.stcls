@@ -1,0 +1,104 @@
+﻿
+Object subclass: #FileCache
+  instanceVariableNames: 
+    ' path lastSize lastTimeStamp contents '
+  classVariableNames: ''
+  poolDictionaries: ''    !
+
+
+!FileCache class methods !
+   
+COMMENT
+"
+	Copyright: © 2011 Policy Works Inc.
+	DateTimeCreated: 2000-01-01 01:00:00
+	DateTimeModified: 2011-11-18 07:11:43
+	LastModifiedBy: ivar
+"
+!
+
+on: anObject from: aFile
+	"Instance Creation - Answers a cache instance for 
+	 anObject from aFile."
+
+	^self new
+		initObject: anObject file: aFile;
+		yourself.   ! !
+
+
+
+!FileCache methods !
+
+contents
+	"Cache - "
+
+	^contents.!
+   
+diskSize
+	"Disk Version - "
+
+	^path asFile size.
+!
+  
+diskTimeStamp
+	"Disk Version - "
+
+	^path asFile lastModificationTime.
+!
+ 
+diskVersionHasChanged
+	"Query - Answers whether the disk version of the 
+	 receiver was modified."
+
+	"Two small changes can happen in less than a second, 
+	 so we have to look at file size as well as time 
+	 stamp."
+	^(self diskSize ~= self lastSize) or: [self diskTimeStamp ~= self lastTimeStamp].
+!
+
+diskVersionHasGrown
+	"Query - Answers whether the disk version of the 
+	 receiver has grown."
+
+	^self diskSize > self lastSize.
+!
+  
+diskVersionHasShrunk
+	"Query - Answers whether the disk version of the 
+	 receiver has shrunk."
+
+	^self diskSize < self lastSize.
+!
+
+initObject: anObject file: aFile
+	"Private - Initializes the receiver's identify variables."
+
+	contents := anObject.
+	path := aFile fileSystemLocator.
+
+	lastSize := self diskSize.
+	lastTimeStamp := self diskTimeStamp.
+!
+ 
+lastSize
+	"Cache - "
+
+	^lastSize.
+!
+ 
+lastTimeStamp
+	"Cache - "
+
+	^lastTimeStamp.
+!
+   
+printOn: aStream
+    "Development - "
+
+    aStream
+        nextPutAll: 'Cache of ', path asString;
+        cr; tab;
+        nextPutAll: 'Modified: ', lastTimeStamp printString;
+        cr; tab;
+        nextPutAll: 'Size: ', lastSize printString;
+        yourself.! !
